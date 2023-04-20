@@ -4,29 +4,51 @@ defmodule TetrisUiWeb.TetrisLive do
   import Phoenix.HTML, only: [raw: 1]
 
   alias Tetris.Brick
+  alias Tetris.Points
 
   @box_width 20
   @box_height 20
 
   def mount(_params, _session, socket) do
-    {
-      :ok,
-      assign(
-        socket,
-        tetromino: Brick.new_random() |> Brick.to_string()
-      )
-    }
+    {:ok, new_game(socket)}
   end
 
   def render(assigns) do
     ~H"""
-    <pre><%= @tetromino %></pre>
+    <%!-- <pre><%= @tetromino %></pre> --%>
     <div id="svg-container">
       <%= raw(svg_head()) %>
-      <%= raw(box({1, 1}, :red)) %>
+      <%= raw(boxes(@tetromino)) %>
       <%= raw(svg_foot()) %>
     </div>
     """
+  end
+
+  defp new_game(socket) do
+    assign(socket,
+      state: :playing,
+      score: 0)
+      |> new_block
+      |> show
+  end
+
+  def new_block(socket) do
+    brick = 
+      Brick.new_random()
+      |> Map.put(:location, {3, 1})
+
+    assign(socket, brick: brick)
+  end
+
+  def show(socket) do
+    brick = socket.assigns.brick
+
+    points = 
+      brick
+      |> Brick.prepare
+      |> Points.with_color(Brick.color(brick))
+
+    assign(socket, tetromino: points)
   end
 
   def svg_head() do
@@ -43,6 +65,12 @@ defmodule TetrisUiWeb.TetrisLive do
   end
 
   def svg_foot(), do: "</svg>"
+
+  def boxes(brick) do
+    brick
+    |> Enum.map(fn {x, y, color} -> box({x, y}, color) end)
+    |> Enum.join("\n")
+  end
 
   def box(point, color) do
     """
