@@ -15,8 +15,7 @@ defmodule TetrisUiWeb.TetrisLive do
 
   def render(assigns) do
     ~H"""
-    <%!-- <pre><%= @tetromino %></pre> --%>
-    <div id="svg-container">
+    <div phx-window-keydown="keydown">
       <%= raw(svg_head()) %>
       <%= raw(boxes(@tetromino)) %>
       <%= raw(svg_foot()) %>
@@ -27,15 +26,17 @@ defmodule TetrisUiWeb.TetrisLive do
   defp new_game(socket) do
     assign(socket,
       state: :playing,
-      score: 0)
-      |> new_block
-      |> show
+      score: 0,
+      bottom: %{}
+    )
+    |> new_block
+    |> show
   end
 
   def new_block(socket) do
-    brick = 
+    brick =
       Brick.new_random()
-      |> Map.put(:location, {3, 1})
+      |> Map.put(:location, {3, -3})
 
     assign(socket, brick: brick)
   end
@@ -43,9 +44,10 @@ defmodule TetrisUiWeb.TetrisLive do
   def show(socket) do
     brick = socket.assigns.brick
 
-    points = 
+    points =
       brick
-      |> Brick.prepare
+      |> Brick.prepare()
+      |> Points.move_to_location(brick.location)
       |> Points.with_color(Brick.color(brick))
 
     assign(socket, tetromino: points)
@@ -55,6 +57,7 @@ defmodule TetrisUiWeb.TetrisLive do
     """
       <svg
       version="1.0"
+      style="background-color: #F4F4F4;"
       id="Layer_1"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
@@ -86,7 +89,7 @@ defmodule TetrisUiWeb.TetrisLive do
     <rect
         x="#{x + 1}" y="#{y + 1}"
         style="fill: ##{shade};"
-        width="#{@box_width - 2}" height="#{@box_height - 2}" />
+        width="#{@box_width - 2}" height="#{@box_height - 1}" />
     """
   end
 
@@ -101,11 +104,65 @@ defmodule TetrisUiWeb.TetrisLive do
     """
   end
 
-  defp to_pixels({x, y}), do: {x * @box_width, y * @box_height}
+  defp to_pixels({x, y}), do: {(x - 1) * @box_width, (y - 1) * @box_height}
 
   defp shades(:red), do: %{light: "DB7160", dark: "AB574B"}
   defp shades(:blue), do: %{light: "83C1C8", dark: "66969C"}
   defp shades(:green), do: %{light: "8BBF57", dark: "769359"}
   defp shades(:orange), do: %{light: "CB8E4E", dark: "AC7842"}
   defp shades(:grey), do: %{light: "A1A09E", dark: "7F7F7E"}
+
+  def drop(socket) do
+    socket
+    |> do_drop
+    |> show
+  end
+
+  def move(direction, socket) do
+    socket
+    |> do_move(direction)
+    |> show
+  end
+
+  def do_drop(%{assigns: assigns} = socket) do
+    brick = assigns.brick |> Brick.down()
+
+    assign(socket, brick: brick)
+  end
+
+  def do_move(%{assigns: assigns} = socket, :right) do
+    brick = assigns.brick |> Tetris.try_right(assigns.bottom)
+
+    assign(socket, brick: brick)
+  end
+
+  def do_move(%{assigns: assigns} = socket, :left) do
+    brick = assigns.brick |> Tetris.try_left(assigns.bottom)
+
+    assign(socket, brick: brick)
+  end
+
+  def do_move(%{assigns: assigns} = socket, :turn) do
+    brick = assigns.brick |> Tetris.try_spin_90(assigns.bottom)
+
+    assign(socket, brick: brick)
+  end
+
+  def handle_event("keydown", %{"key" => "ArrowLeft"}, socket) do
+    {:noreply, move(:left, socket)}
+  end
+
+  def handle_event("keydown", %{"key" => "ArrowRight"}, socket) do
+    {:noreply, move(:right, socket)}
+  end
+
+  def handle_event("keydown", %{"key" => "z"}, socket) do
+    {:noreply, move(:turn, socket)}
+  end
+
+  def handle_event("keydown", %{"key" => "ArrowDown"}, socket) do
+    {:noreply, drop(socket)}
+  end
+
+  def handle_event("keydown", _, socket), do: {:noreply, socket}
 end
