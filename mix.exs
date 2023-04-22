@@ -47,7 +47,7 @@ defmodule TetrisUi.MixProject do
       {:gettext, "~> 0.20"},
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
-      {:tetris_core, git: "https://github.com/OscarTinajero117/tetris_core.git", tag: "v0.4"}
+      {:tetris_core, git: "https://github.com/OscarTinajero117/tetris_core.git", tag: "v0.5"}
     ]
   end
 
