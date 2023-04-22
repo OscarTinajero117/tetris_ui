@@ -10,16 +10,27 @@ defmodule TetrisUiWeb.TetrisLive do
   @box_height 20
 
   def mount(_params, _session, socket) do
+    :timer.send_interval(1000, self(), :tick)
+
     {:ok, new_game(socket)}
   end
 
-  def render(assigns) do
+  def render(%{state: :playing} = assigns) do
     ~H"""
+    <h1>Tetris</h1>
+    <h2>Score: <%= @score %></h2>
     <div phx-window-keydown="keydown">
       <%= raw(svg_head()) %>
       <%= raw(boxes(@tetromino)) %>
+      <%= raw(boxes(Map.values(@bottom))) %>
       <%= raw(svg_foot()) %>
     </div>
+    """
+  end
+
+  def render(%{state: :game_over} = assigns) do
+    ~H"""
+    <h1>Game Over</h1>
     """
   end
 
@@ -113,8 +124,22 @@ defmodule TetrisUiWeb.TetrisLive do
   defp shades(:grey), do: %{light: "A1A09E", dark: "7F7F7E"}
 
   def drop(socket) do
+    old_brick = socket.assigns.brick
+
+    response =
+      Tetris.drop(
+        old_brick,
+        socket.assigns.bottom,
+        Brick.color(old_brick)
+      )
+
     socket
-    |> do_drop
+    |> assign(
+      brick: response.brick,
+      bottom: response.bottom,
+      score: response.score + socket.assigns.score,
+      state: if(response.game_over, do: :game_over, else: :playing)
+    )
     |> show
   end
 
@@ -122,12 +147,6 @@ defmodule TetrisUiWeb.TetrisLive do
     socket
     |> do_move(direction)
     |> show
-  end
-
-  def do_drop(%{assigns: assigns} = socket) do
-    brick = assigns.brick |> Brick.down()
-
-    assign(socket, brick: brick)
   end
 
   def do_move(%{assigns: assigns} = socket, :right) do
@@ -164,5 +183,11 @@ defmodule TetrisUiWeb.TetrisLive do
     {:noreply, drop(socket)}
   end
 
-  def handle_event("keydown", _, socket), do: {:noreply, socket}
+  def handle_event("keydown", _, socket) do
+   {:noreply, socket}
+  end
+
+  def handle_info(:tick, socket) do
+    {:noreply, drop(socket)}
+  end
 end
