@@ -90,6 +90,9 @@ defmodule TetrisUiWeb do
       # Shortcut for generating JS commands
       alias Phoenix.LiveView.JS
 
+      # Use Petal for rendering HTML
+      use PetalComponents
+
       # Routes generation with the ~p sigil
       unquote(verified_routes())
     end
