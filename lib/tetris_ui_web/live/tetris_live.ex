@@ -1,13 +1,14 @@
 defmodule TetrisUiWeb.TetrisLive do
   use Phoenix.LiveView
+  use PetalComponents
 
   import Phoenix.HTML, only: [raw: 1]
 
   alias Tetris.Brick
   alias Tetris.Points
 
-  @box_width 20
-  @box_height 20
+  @box_width 40
+  @box_height 40
 
   def mount(_params, _session, socket) do
     :timer.send_interval(400, self(), :tick)
@@ -15,31 +16,58 @@ defmodule TetrisUiWeb.TetrisLive do
     {:ok, start_game(socket)}
   end
 
-  def render(%{state: :playing} = assigns) do
+  def render(%{state: :starting} = assigns) do
     ~H"""
-    <h1>Tetris</h1>
-    <h2>Score: <%= @score %></h2>
-    <div phx-window-keydown="keydown">
-      <%= raw(svg_head()) %>
-      <%= raw(boxes(@tetromino)) %>
-      <%= raw(boxes(Map.values(@bottom))) %>
-      <%= raw(svg_foot()) %>
-    </div>
+    <.container max_width="full" class="content-center bg-[url('https://wallpapercave.com/wp/wp2675365.jpg')]">
+      <.container max_width="lg" class="mt-10 mb-10 border-2 bg-white">
+        <.h1 class="text-center mt-5">Tetris</.h1>
+        <.p class="text-center mt-5">Press the button to start the game!!!</.p>
+        <.container class="flex flex-wrap items-end justify-center my-1 rounded-md">
+          <.button icon={:play} size="lg" phx-click="start" color="primary" label="Start" class="mb-10" />
+        </.container>
+        <.h2 class="text-center mt-5">Instructions</.h2>
+        <.p class="text-center mt-5">Use the arrow keys to move the blocks left and right and down. Press the "z" to rotate the block.</.p>
+        <.container class="h-56 grid grid-cols-3 gap-4 content-center">
+          <div></div>
+          <.h2>z</.h2>
+          <div></div>
+          <.icon name={:arrow_left} class="h-10 text-gray-700 dark:text-gray-300"/>
+          <.icon name={:arrow_down} class="h-10 text-gray-700 dark:text-gray-300"/>
+          <.icon name={:arrow_right} class="h-10 text-gray-700 dark:text-gray-300"/>
+        </.container>
+      </.container>
+    </.container>
     """
   end
 
-  def render(%{state: :starting} = assigns) do
+  def render(%{state: :playing} = assigns) do
     ~H"""
-    <h1 class="text-3xl font-bold underline" >Welcome to Tetris!</h1>
-    <button phx-click="start">Start</button>
+    <.container max_width="full" class="content-center bg-[url('https://wallpapercave.com/wp/wp2675365.jpg')]">
+      <.container max_width="lg" class="mt-10 mb-10 border-2 bg-white">
+        <.h1 class="text-center mt-5">Tetris</.h1>
+        <.h2 class="text-left mt-5 pl-8">Score: <%= @score %></.h2>
+        <.container phx-window-keydown="keydown" class="flex flex-wrap items-end justify-center my-3 py-5 rounded-md">
+          <%= raw(svg_head()) %>
+          <%= raw(boxes(@tetromino)) %>
+          <%= raw(boxes(Map.values(@bottom))) %>
+          <%= raw(svg_foot()) %>
+        </.container>
+      </.container>
+    </.container>
     """
   end
 
   def render(%{state: :game_over} = assigns) do
     ~H"""
-    <h1>Game Over</h1>
-    <h2>Your Score: <%= @score %></h2>
-    <button phx-click="start">Play again?</button>
+    <.container max_width="full" class="content-center bg-[url('https://wallpapercave.com/wp/wp2675365.jpg')]">
+      <.container max_width="lg" class="mt-10 mb-10 border-2 bg-white">
+        <.h1 class="text-center mt-5">Game Over</.h1>
+        <.h3 class="text-center mt-5">Your Score: <%= @score %></.h3>
+        <.container class="flex flex-wrap items-end justify-center my-1 rounded-md">
+          <.button icon={:arrow_path} size="lg" phx-click="start" color="primary" label="Play again?" class="mb-10" />
+        </.container>
+      </.container>
+    </.container>
     """
   end
 
@@ -87,8 +115,8 @@ defmodule TetrisUiWeb.TetrisLive do
       id="Layer_1"
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
-      width="200" height="400"
-      viewBox="0 0 200 400"
+      width="400" height="800"
+      viewBox="0 0 400 800"
       xml:space= "preserve" >
     """
   end
@@ -225,11 +253,11 @@ defmodule TetrisUiWeb.TetrisLive do
   end
 
   def handle_event("keydown", _, socket) do
-   {:noreply, socket}
+    {:noreply, socket}
   end
 
   def handle_event("start", _, socket) do
-   {:noreply, new_game(socket)}
+    {:noreply, new_game(socket)}
   end
 
   def handle_info(:tick, socket) do
