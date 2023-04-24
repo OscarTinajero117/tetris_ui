@@ -48,6 +48,7 @@ defmodule TetrisUi.MixProject do
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.5"},
       {:tetris_core, git: "https://github.com/OscarTinajero117/tetris_core.git", tag: "v0.5"}
+      {:petal_components, "~> 1.0"}
     ]
   end
 
